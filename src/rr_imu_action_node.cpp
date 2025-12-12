@@ -20,6 +20,8 @@
 
 #include "rr_imu_action/rr_imu_action_node.hpp"
 
+
+// keeping for reference poly_loader_("rr_common_base", "rrobots::interfaces::RRImuActionPluginIface")
 namespace rr_imu_action
 {
 

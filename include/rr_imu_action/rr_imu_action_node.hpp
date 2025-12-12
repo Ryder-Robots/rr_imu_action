@@ -20,28 +20,97 @@
 
 #pragma once
 
-#include "rr_imu_action/visibility_control.h"
-#include "rclcpp/rclcpp.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "rr_common_base/rr_imu_action_plugin_iface.hpp"
+#include <memory>
 #include <pluginlib/class_loader.hpp>
+
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
+#include "rclcpp_components/register_node_macro.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+
+#include "rr_common_base/rr_imu_action_plugin_iface.hpp"
+#include "rr_imu_action/visibility_control.h"
+#include "rr_interfaces/action/monitor_imu_action.hpp"
 
 namespace rr_imu_action
 {
 
-  class RrImuActionNode
-  {
-  private:
-    pluginlib::ClassLoader<rrobots::interfaces::RRImuActionPluginIface> poly_loader_;
-
-  public:
-    explicit RrImuActionNode(const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
-        : rclcpp_lifecycle::LifecycleNode("rr_imu_action_node", options),
-          poly_loader_("rr_common_base", "rrobots::interfaces::RrNodeJoyPluginIface")
+    /**
+     * @class RrImuActionNode
+     * @brief provides action interface to IMU
+     * 
+     * Concrete implementation of IMU actions is provided by plugin, this service hides the plumbing of
+     * the implementation.
+     */
+    class RR_IMU_ACTION_PUBLIC RrImuActionNode : public rclcpp_lifecycle::LifecycleNode
     {
-    }
+        using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+        using State = rclcpp_lifecycle::State;
+        using RRImuActionPluginIface = rrobots::interfaces::RRImuActionPluginIface;
+        using MonitorImuAction = rr_interfaces::action::MonitorImuAction;
 
-    virtual ~RrImuActionNode() = default;
-  };
+      public:
+        explicit RrImuActionNode(const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
+            : rclcpp_lifecycle::LifecycleNode("rr_imu_action_node", options),
+              poly_loader_("", "")
+        {
+        }
+
+        virtual ~RrImuActionNode() = default;
+
+        /**
+         * @fn on_configure
+         * @brief ROS2 lifecycle on_configure hook.
+         * @param state - The current lifecycle state
+         * 
+         * Loads plugin using ros2 parameter 'imu_action_plugin' if specified, otherwise uses default.
+         * Calls the plugin_lib_->on_configure method to perform any initialization required for the plugin.
+         * 
+         * @return CallbackReturn::SUCCESS if plugin loaded and configured successfully
+         *         CallbackReturn::ERROR if plugin loading or configuration fails
+         */
+        CallbackReturn on_configure(const State &state) override;
+
+        /**
+         * @fn on_activate
+         * @brief ROS2 lifecycle hook on_activate
+         * @param state - The current lifecycle state
+         * 
+         * makes action server available.
+         * registers functions plugin_lib_->handle_goal(), plugin_lib_->handle_cancel, 
+         * and plugin_lib_->handle_accepted() to action server.
+         * @return CallbackReturn::SUCCESS if operation successful
+         *         CallbackReturn::ERROR if recoverable error occurs
+         *         CallbackReturn::FAILURE if unrecoverable error occurs
+         */
+        CallbackReturn on_activate(const State &state) override;
+
+        /**
+         * @fn on_deactivate
+         * @brief ROS2 lifecycle hook on_deactivate
+         * @param state - The current lifecycle state
+         * 
+         * included for completeness currently unimplemented.
+         * 
+         * @return always returns CallbackReturn::SUCCESS
+         */
+        CallbackReturn on_deactivate(const State &state) override;
+
+        /**
+         * @fn on_cleanup
+         * @brief ROS2 lifecycle hook on_cleanup
+         * @param state - The current lifecycle state
+         * 
+         * included for completeness currently unimplemented.
+         * 
+         * @return always returns CallbackReturn::SUCCESS
+         */
+        CallbackReturn on_cleanup(const State &state) override;
+
+      private:
+        pluginlib::ClassLoader<RRImuActionPluginIface> poly_loader_;
+        rclcpp_action::Server<MonitorImuAction>::SharedPtr action_server_;
+        std::shared_ptr<RRImuActionPluginIface> plugin_lib_;
+    };
 
 } // namespace rr_imu_action

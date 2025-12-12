@@ -50,6 +50,7 @@ target_link_libraries(
   ${rclcpp_lifecycle_TARGETS}
   ${rclcpp_components_TARGETS}
   ${pluginlib_TARGETS}
+  ${rclcpp_action_TARGETS}
 )
 
 # Causes the visibility macros to use dllexport rather than dllimport,
