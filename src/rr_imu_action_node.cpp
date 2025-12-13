@@ -90,3 +90,5 @@ namespace rr_imu_action
     }
 
 } // namespace rr_imu_action
+
+RCLCPP_COMPONENTS_REGISTER_NODE(rr_imu_action::RrImuActionNode);
