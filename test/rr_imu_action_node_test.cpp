@@ -229,18 +229,17 @@ TEST_F(TestRrImuActionNode, node_with_custom_options)
     EXPECT_TRUE(node != nullptr);
 }
 
-TEST_F(TestRrImuActionNode, on_deactivate_logging)
+TEST_F(TestRrImuActionNode, on_deactivate_without_configured_transport)
 {
     auto node = std::make_shared<RrImuActionNode>(node_options);
 
-    // on_deactivate will fail without proper plugin, but should still log
+    // Deactivate should succeed with warning when transport is not configured
+    // This allows graceful deactivation even if configuration failed
     State state(lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE, "active");
+    auto result = node->on_deactivate(state);
 
-    // This will fail because transport_ is nullptr, but we're testing that it doesn't crash
-    EXPECT_NO_THROW({
-        auto result = node->on_deactivate(state);
-        // Expected to fail or crash due to null transport_
-    });
+    // Should return SUCCESS (non-configured plugin can still be considered deactivated)
+    EXPECT_EQ(result, CallbackReturn::SUCCESS);
 }
 
 TEST_F(TestRrImuActionNode, multiple_instantiation)
@@ -265,18 +264,20 @@ TEST_F(TestRrImuActionNode, destructor_cleanup)
     SUCCEED();
 }
 
-TEST_F(TestRrImuActionNode, plugin_parameter_can_be_overridden)
+TEST_F(TestRrImuActionNode, plugin_parameter_can_be_set_via_options)
 {
-    auto node = std::make_shared<RrImuActionNode>(node_options);
+    // Create node options with custom parameter
+    rclcpp::NodeOptions custom_options;
+    custom_options.append_parameter_override("transport_plugin", "rr_common_plugins::rr_serial_plugins::ImuActionSerialPlugin");
 
-    // Set a custom plugin name before configure
-    node->declare_parameter("transport_plugin", "custom::plugin::Name");
+    auto node = std::make_shared<RrImuActionNode>(custom_options);
 
     State state(lifecycle_msgs::msg::State::PRIMARY_STATE_UNCONFIGURED, "unconfigured");
     node->on_configure(state);
 
+    // Verify the parameter was used
     auto param = node->get_parameter("transport_plugin");
-    EXPECT_EQ(param.as_string(), std::string("custom::plugin::Name"));
+    EXPECT_EQ(param.as_string(), std::string("rr_common_plugins::rr_serial_plugins::ImuActionSerialPlugin"));
 }
 
 TEST_F(TestRrImuActionNode, configure_creates_transport_instance)

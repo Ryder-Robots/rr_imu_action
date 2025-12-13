@@ -73,6 +73,12 @@ namespace rr_imu_action
     CallbackReturn RrImuActionNode::on_deactivate(const State &state)
     {
         RCLCPP_INFO(get_logger(), "deactivating %s", get_name());
+        if (!transport_) {
+            RCLCPP_WARN(get_logger(), "Transport plugin not configured");
+            // return success, on non-configured plugin can still be considered
+            // deactivated.
+            return CallbackReturn::SUCCESS;
+        }
         return transport_->on_deactivate(state);
     }
 
