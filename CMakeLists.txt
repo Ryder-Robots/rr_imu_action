@@ -92,7 +92,7 @@ ament_export_targets(
   export_${PROJECT_NAME}
 )
 
-rclcpp_components_register_node(${PROJECT_NAME}_node
+rclcpp_components_register_node(rr_imu_action_node
   PLUGIN "rr_imu_action::RrImuActionNode"
   EXECUTABLE "rr_imu_action"
 )
