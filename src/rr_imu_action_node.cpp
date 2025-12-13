@@ -20,9 +20,67 @@
 
 #include "rr_imu_action/rr_imu_action_node.hpp"
 
+using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+using State = rclcpp_lifecycle::State;
+using MonitorImuAction = rr_interfaces::action::MonitorImuAction;
 
-// keeping for reference poly_loader_("rr_common_base", "rrobots::interfaces::RRImuActionPluginIface")
 namespace rr_imu_action
 {
+    CallbackReturn RrImuActionNode::on_configure(const State &state)
+    {
+        RCLCPP_INFO(get_logger(), "configuring %s", get_name());
+        declare_parameter("transport_plugin", "rrobots::interfaces::RRImuActionPluginIface");
+        std::string plugin_param = get_parameter("transport_plugin").as_string();
+        RCLCPP_DEBUG(get_logger(), "transport plugin is '%s'", plugin_param.c_str());
+        CallbackReturn rv = CallbackReturn::SUCCESS;
+        try {
+            if (poly_loader_.getBaseClassType().empty()) {
+                RCLCPP_ERROR(get_logger(), "Plugin loader not initialized");
+                return CallbackReturn::ERROR;
+            }
+            transport_ = poly_loader_.createSharedInstance(plugin_param);
+            rv = transport_->on_configure(state, shared_from_this());
+        }
+        catch (pluginlib::PluginlibException &ex) {
+            RCLCPP_FATAL(get_logger(), "could not load transport plugin: %s - reported: %s", plugin_param.c_str(), ex.what());
+            return CallbackReturn::ERROR;
+        }
 
-}  // namespace rr_imu_action
+        return rv;
+    }
+
+    CallbackReturn RrImuActionNode::on_activate(const State &state)
+    {
+        RCLCPP_INFO(get_logger(), "activating %s", get_name());
+        if (!transport_) {
+            RCLCPP_ERROR(get_logger(), "Transport plugin not configured");
+            return CallbackReturn::ERROR;
+        }
+        auto handle_goal = std::bind(&RRImuActionPluginIface::handle_goal, transport_, std::placeholders::_1, std::placeholders::_2);
+        auto handle_cancel = std::bind(&RRImuActionPluginIface::handle_cancel, transport_, std::placeholders::_1);
+        auto handle_accepted = std::bind(&RRImuActionPluginIface::handle_accepted, transport_, std::placeholders::_1);
+
+        action_server_ = rclcpp_action::create_server<MonitorImuAction>(
+            this,
+            "imu_monitor_action",
+            handle_goal,
+            handle_cancel,
+            handle_accepted);
+
+        return transport_->on_activate(state);
+    }
+
+    CallbackReturn RrImuActionNode::on_deactivate(const State &state)
+    {
+        RCLCPP_INFO(get_logger(), "deactivating %s", get_name());
+        return transport_->on_deactivate(state);
+    }
+
+    CallbackReturn RrImuActionNode::on_cleanup(const State &state)
+    {
+        (void)state;
+        RCLCPP_INFO(get_logger(), "cleaning up %s", get_name());
+        return CallbackReturn::SUCCESS;
+    }
+
+} // namespace rr_imu_action

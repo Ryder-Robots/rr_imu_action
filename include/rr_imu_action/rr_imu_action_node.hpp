@@ -52,7 +52,7 @@ namespace rr_imu_action
       public:
         explicit RrImuActionNode(const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
             : rclcpp_lifecycle::LifecycleNode("rr_imu_action_node", options),
-              poly_loader_("", "")
+             poly_loader_("rr_common_base", "rrobots::interfaces::RRImuActionPluginIface")
         {
         }
 
@@ -63,8 +63,7 @@ namespace rr_imu_action
          * @brief ROS2 lifecycle on_configure hook.
          * @param state - The current lifecycle state
          * 
-         * Loads plugin using ros2 parameter 'imu_action_plugin' if specified, otherwise uses default.
-         * Calls the plugin_lib_->on_configure method to perform any initialization required for the plugin.
+         * Loads plugin using ros2 parameter 'imu_action_plugin'.
          * 
          * @return CallbackReturn::SUCCESS if plugin loaded and configured successfully
          *         CallbackReturn::ERROR if plugin loading or configuration fails
@@ -90,9 +89,12 @@ namespace rr_imu_action
          * @brief ROS2 lifecycle hook on_deactivate
          * @param state - The current lifecycle state
          * 
-         * included for completeness currently unimplemented.
+         * instructs plugin to perform deactivation.
          * 
-         * @return always returns CallbackReturn::SUCCESS
+         * @return one of CallbackReturn::SUCCESS if operation successful
+         *         CallbackReturn::ERROR if recoverable error occurs
+         *         CallbackReturn::FAILURE if unrecoverable error occurs 
+         * as decided by plugin.
          */
         CallbackReturn on_deactivate(const State &state) override;
 
@@ -110,7 +112,7 @@ namespace rr_imu_action
       private:
         pluginlib::ClassLoader<RRImuActionPluginIface> poly_loader_;
         rclcpp_action::Server<MonitorImuAction>::SharedPtr action_server_;
-        std::shared_ptr<RRImuActionPluginIface> plugin_lib_;
+        std::shared_ptr<RRImuActionPluginIface> transport_;
     };
 
 } // namespace rr_imu_action
