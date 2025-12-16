@@ -28,17 +28,16 @@ namespace rr_imu_action
 {
     CallbackReturn RrImuActionNode::on_configure(const State &state)
     {
+        (void)state;
         RCLCPP_INFO(get_logger(), "configuring %s", get_name());
         declare_parameter("transport_plugin", "rrobots::interfaces::RRImuActionPluginIface");
         std::string plugin_param = get_parameter("transport_plugin").as_string();
         RCLCPP_DEBUG(get_logger(), "transport plugin is '%s'", plugin_param.c_str());
         CallbackReturn rv = CallbackReturn::SUCCESS;
         try {
-            if (poly_loader_.getBaseClassType().empty()) {
-                RCLCPP_ERROR(get_logger(), "Plugin loader not initialized");
-                return CallbackReturn::ERROR;
-            }
-            transport_ = poly_loader_.createSharedInstance(plugin_param);
+
+            poly_loader_ = std::make_unique<pluginlib::ClassLoader<RRImuActionPluginIface>>("rr_common_base", "rrobots::interfaces::RRImuActionPluginIface");
+            transport_ = poly_loader_->createUniqueInstance(plugin_param);
             rv = transport_->on_configure(state, shared_from_this());
         }
         catch (pluginlib::PluginlibException &ex) {
@@ -56,9 +55,9 @@ namespace rr_imu_action
             RCLCPP_ERROR(get_logger(), "Transport plugin not configured");
             return CallbackReturn::ERROR;
         }
-        auto handle_goal = std::bind(&RRImuActionPluginIface::handle_goal, transport_, std::placeholders::_1, std::placeholders::_2);
-        auto handle_cancel = std::bind(&RRImuActionPluginIface::handle_cancel, transport_, std::placeholders::_1);
-        auto handle_accepted = std::bind(&RRImuActionPluginIface::handle_accepted, transport_, std::placeholders::_1);
+        auto handle_goal = std::bind(&RRImuActionPluginIface::handle_goal, transport_.get(), std::placeholders::_1, std::placeholders::_2);
+        auto handle_cancel = std::bind(&RRImuActionPluginIface::handle_cancel, transport_.get(), std::placeholders::_1);
+        auto handle_accepted = std::bind(&RRImuActionPluginIface::handle_accepted, transport_.get(), std::placeholders::_1);
 
         action_server_ = rclcpp_action::create_server<MonitorImuAction>(
             this,

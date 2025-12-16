@@ -51,8 +51,7 @@ namespace rr_imu_action
 
       public:
         explicit RrImuActionNode(const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
-            : rclcpp_lifecycle::LifecycleNode("rr_imu_action_node", options),
-             poly_loader_("rr_common_base", "rrobots::interfaces::RRImuActionPluginIface")
+            : rclcpp_lifecycle::LifecycleNode("rr_imu_action_node", options)
         {
         }
 
@@ -110,9 +109,9 @@ namespace rr_imu_action
         CallbackReturn on_cleanup(const State &state) override;
 
       private:
-        pluginlib::ClassLoader<RRImuActionPluginIface> poly_loader_;
+        std::unique_ptr<pluginlib::ClassLoader<RRImuActionPluginIface>> poly_loader_;
         rclcpp_action::Server<MonitorImuAction>::SharedPtr action_server_;
-        std::shared_ptr<RRImuActionPluginIface> transport_;
+        class_loader::ClassLoader::UniquePtr<RRImuActionPluginIface> transport_;
     };
 
 } // namespace rr_imu_action

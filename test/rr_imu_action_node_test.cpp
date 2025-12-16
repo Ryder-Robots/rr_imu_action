@@ -38,6 +38,7 @@ class MockImuActionPlugin : public rrobots::interfaces::RRImuActionPluginIface
 
     CallbackReturn on_configure(const State &state, rclcpp_lifecycle::LifecycleNode::SharedPtr node) override
     {
+        (void)node;
         on_configure_called = true;
         last_state = state.id();
         return configure_return_value;
@@ -61,6 +62,7 @@ class MockImuActionPlugin : public rrobots::interfaces::RRImuActionPluginIface
         const rclcpp_action::GoalUUID &uuid,
         std::shared_ptr<const rr_interfaces::action::MonitorImuAction::Goal> goal) override
     {
+        (void)goal;
         handle_goal_called = true;
         last_goal_uuid = uuid;
         return goal_response;
@@ -69,6 +71,7 @@ class MockImuActionPlugin : public rrobots::interfaces::RRImuActionPluginIface
     rclcpp_action::CancelResponse handle_cancel(
         const std::shared_ptr<rclcpp_action::ServerGoalHandle<rr_interfaces::action::MonitorImuAction>> goal_handle) override
     {
+        (void)goal_handle;
         handle_cancel_called = true;
         return cancel_response;
     }

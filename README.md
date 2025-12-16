@@ -233,6 +233,28 @@ To create a custom IMU action plugin:
 </library>
 ```
 
+## Debuging and Devlopment
+
+Before launching command ensure that component withing the 
+
+```bash
+echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+colcon build --packages-select rr_imu_action --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo --symlink-install
+source install/setup.bash
+ros2 launch rr_mousebot_bringup rr_mousebot.launch.py
+ps aux | grep component_container
+
+# OUTPUT 
+#aaron       3647  1.4  0.4 1018668 38528 tty1    Sl+  16:33   0:00 /opt/ros/kilted/lib/rclcpp_components/component_container --ros-args -r __node:=driver_container -r __ns:=/driver
+#aaron       3648  1.0  0.3 976828 30208 tty1     Sl+  16:33   0:00 /opt/ros/kilted/lib/rclcpp_components/component_container --ros-args -r __node:=sensor_nodes -r __ns:=/sensor
+#aaron       3649  1.1  0.3 1002764 31744 tty1    Sl+  16:33   0:00 /opt/ros/kilted/lib/rclcpp_components/component_container_mt --ros-args -r __node:=state_nodes -r __ns:=/state
+#aaron       3710  0.0  0.0   3696  1792 pts/0    S+   16:34   0:00 grep --color=auto component_container
+
+# use second field 3648, or what -r __node:=sensor_nodes -r __ns:=/sensor is defined as
+
+
+```
+
 ## License
 
 MIT License - See LICENSE file for details.
