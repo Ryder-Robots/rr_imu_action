@@ -193,6 +193,40 @@ ros2 action list
 ros2 action info /monitor_imu_action
 ```
 
+### Testing with the Test Utility
+
+A Python test utility is available in the workspace utilities directory for convenient action testing.
+
+**Basic IMU action test:**
+```bash
+cd /home/aaron/ros2_ws
+source install/setup.bash
+python3 utilities/rr_actions.py imu
+```
+
+**Test with custom parameters:**
+```bash
+# Custom frame ID and timeout
+python3 utilities/rr_actions.py imu --frame-id base_link --timeout 15.0
+
+# Custom action server name
+python3 utilities/rr_actions.py imu --action-name /robot1/imu_monitor_action
+```
+
+**View help:**
+```bash
+python3 utilities/rr_actions.py --help
+python3 utilities/rr_actions.py imu --help
+```
+
+**Note:** The test utility provides:
+- Automatic action server discovery with configurable timeout
+- Real-time feedback display during action execution
+- Clear success/failure reporting with detailed logging
+- Extensible architecture for adding additional action types
+
+See [/home/aaron/ros2_ws/utilities/README.md](../../utilities/README.md) for more details on the test utility.
+
 ## Dependencies
 
 - **ROS 2** (Humble or later recommended)
